@@ -1,16 +1,10 @@
-import asyncio
 import telepot
-from telepot.async.delegate import per_from_id, create_open
+from telepot.delegate import per_inline_from_id, create_open
 
 from dotabuff.config import BOT_TOKEN
-from dotabuff.bot import UserTracker
+from dotabuff.bot import InlineHandler
 
-bot = telepot.async.DelegatorBot(BOT_TOKEN, [
-    (per_from_id(), create_open(UserTracker, timeout=20)),
+bot = telepot.DelegatorBot(BOT_TOKEN, [
+    (per_inline_from_id(), create_open(InlineHandler, timeout=10)),
 ])
-loop = asyncio.get_event_loop()
-
-loop.create_task(bot.messageLoop())
-print('Listening ...')
-
-loop.run_forever()
+bot.notifyOnMessage(run_forever=True)

@@ -13,7 +13,7 @@ class DotaBuffQuery(object):
     """
     URL = 'http://www.dotabuff.com/'
     DEFAULT_NAMES = ['Puppey', 'Dendi', 'Atomic', 'HappyMeds']
-    PLAYERS_CUTOFF = 10
+    PLAYERS_CUTOFF = 20
 
     def get_players(self, name):
         players = []
@@ -22,7 +22,7 @@ class DotaBuffQuery(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/27.0.1453.94 Safari/537.36'}
 
-        name = name or random.select(DotaBuffQuery.DEFAULT_NAMES)
+        name = name or random.choice(DotaBuffQuery.DEFAULT_NAMES)
 
         player_url = DotaBuffQuery.URL + u'search?q={name}&commit=Search'.format(
             name=name.lower())

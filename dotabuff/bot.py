@@ -1,42 +1,33 @@
 import telepot
 
-"""
-$ python3.4 trackera.py <token>
-Tracks user actions across all flavors.
-"""
+from dotabuff.query import DotaBuffQuery
 
-class UserTracker(telepot.async.helper.UserHandler):
+
+class InlineHandler(telepot.helper.UserHandler):
     def __init__(self, seed_tuple, timeout):
-        super(UserTracker, self).__init__(seed_tuple, timeout)
+        super(InlineHandler, self).__init__(seed_tuple, timeout,
+                                            flavors=['inline_query', 'chosen_inline_result'])
+        self._answerer = telepot.helper.Answerer(self.bot)
+        self.query = DotaBuffQuery()
 
-        # keep track of how many messages of each flavor
-        self._counts = {'normal': 0,
-                        'inline_query': 0,
-                        'chosen_inline_result': 0}
+    def on_inline_query(self, msg):
+        query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')
+        print(self.id, ':', 'Inline Query:', query_id, from_id, query_string)
 
-        self._answerer = telepot.async.helper.Answerer(self.bot)
+        def compute_answer():
+            players = self.query.get_players(query_string)
+            articles = []
+            for player in players:
+                article = {'type': u'article',
+                           'id': player.id, u'title': player.name,
+                           'message_text': u'Dota player: {}'.format(player.name),
+                           'thumb_url': player.img_url}
+                articles.append(article)
 
-    def on_message(self, msg):
-        flavor = telepot.flavor(msg)
-        self._counts[flavor] += 1
+            return articles
 
-        # Display message counts separated by flavors
-        print(self.id, ':',
-              flavor, '+1', ':',
-              ', '.join([str(self._counts[f]) for f in ['normal', 'inline_query', 'chosen_inline_result']]))
+        self._answerer.answer(msg, compute_answer)
 
-        # Have to answer inline query to receive chosen result
-        if flavor == 'inline_query':
-            def compute_answer():
-                query_id, from_id, query_string = telepot.glance(msg, flavor=flavor)
-
-                articles = [{'type': 'article',
-                                 'id': 'abc', 'title': query_string, 'message_text': query_string}
-                            ]
-
-                return articles
-
-            self._answerer.answer(msg, compute_answer)
-
-
-
+    def on_chosen_inline_result(self, msg):
+        result_id, from_id, query_string = telepot.glance(msg, flavor='chosen_inline_result')
+        print(self.id, ':', 'Chosen Inline Result:', result_id, from_id, query_string)
