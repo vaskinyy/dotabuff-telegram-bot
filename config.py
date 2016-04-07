@@ -1,2 +1,0 @@
-
-BOT_TOKEN = "YOUR_TOKEN"
