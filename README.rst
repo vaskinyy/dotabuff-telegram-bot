@@ -18,3 +18,10 @@ To setup the application with Conda package management system, it requires `cond
  # Activate the environment
  source activate dotabuff-telegram-bot
 
+Check installation
+------------------
+To check if the package properly installed you may run tests
+::
+ # (optional) run tests
+ python -m unittest discover
+
