@@ -2,6 +2,8 @@ import random
 import logging
 import requests
 from scrapy.selector import Selector
+
+from dotabuff.config import DEFAULT_NAMES, URL, PLAYERS_CUTOFF
 from dotabuff.models import DotaBuffPlayer
 
 logger = logging.getLogger(__name__)
@@ -11,9 +13,6 @@ class DotaBuffQuery(object):
     """
     Requests DotaBuff server for players, matches, etc.
     """
-    URL = 'http://www.dotabuff.com/'
-    DEFAULT_NAMES = ['Puppey', 'Dendi', 'Atomic', 'HappyMeds']
-    PLAYERS_CUTOFF = 20
 
     def get_players(self, name):
         players = []
@@ -22,9 +21,9 @@ class DotaBuffQuery(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/27.0.1453.94 Safari/537.36'}
 
-        name = name or random.choice(DotaBuffQuery.DEFAULT_NAMES)
+        name = name or random.choice(DEFAULT_NAMES)
 
-        player_url = DotaBuffQuery.URL + u'search?q={name}&commit=Search'.format(
+        player_url = URL + u'search?q={name}&commit=Search'.format(
             name=name.lower())
 
         resp = requests.get(player_url, headers=headers)
@@ -34,7 +33,7 @@ class DotaBuffQuery(object):
 
         player_divs = Selector(text=resp.content).css('.result-player')
         for num, player_div in enumerate(player_divs):
-            if num > DotaBuffQuery.PLAYERS_CUTOFF:
+            if num > PLAYERS_CUTOFF:
                 break
 
             name = player_div.xpath('@data-filter-value').extract_first(default=None)

@@ -18,10 +18,7 @@ class InlineHandler(telepot.helper.UserHandler):
             players = self.query.get_players(query_string)
             articles = []
             for player in players:
-                article = {'type': u'article',
-                           'id': player.id, u'title': player.name,
-                           'message_text': u'Dota player: {}'.format(player.name),
-                           'thumb_url': player.img_url}
+                article = player.telegram_article
                 articles.append(article)
 
             return articles
