@@ -1,4 +1,6 @@
 import unittest
+import ago
+import datetime
 
 from dotabuff.query import DotaBuffQuery
 
@@ -39,6 +41,13 @@ class Test_DotaBuffQuery(unittest.TestCase):
     def test_no_players_if_no_result(self):
         players = self.query.get_players(u"//////")
         self.assertFalse(players)
+
+    def test_no_players_last_date(self):
+        players = self.query.get_players("Dendi")
+        self.assertTrue(len(players) > 0)
+        Dendi = players[0]
+        print(ago.human(datetime.datetime.strptime(Dendi.last_match_date, "%Y-%m-%d"), precision=1))
+        self.assertTrue(len(Dendi.last_match_date) > 0)
 
     def test_matches_of_a_player(self):
         matches = self.query.get_matches("163519691")

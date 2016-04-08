@@ -58,8 +58,11 @@ class DotaBuffQuery(object):
                 continue
 
             # TODO add last match time
+            last_match_date = player_div.css('.identity time').xpath('text()').extract_first(
+                default=None)
 
-            player = DotaBuffPlayer(name=name, id=id, img_url=img_url)
+            player = DotaBuffPlayer(name=name, id=id, img_url=img_url,
+                                    last_match_date=last_match_date)
             players.append(player)
 
         return players
