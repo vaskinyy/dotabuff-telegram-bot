@@ -39,3 +39,8 @@ class Test_DotaBuffQuery(unittest.TestCase):
     def test_no_players_if_no_result(self):
         players = self.query.get_players(u"//////")
         self.assertFalse(players)
+
+    def test_matches_of_a_player(self):
+        matches = self.query.get_matches("163519691")
+        print(matches)
+        self.assertTrue(len(matches) > 0)
