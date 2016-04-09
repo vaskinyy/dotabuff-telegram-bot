@@ -1,5 +1,6 @@
 import unittest
 
+from dotabuff.config import VIP_PLAYERS_IDS
 from dotabuff.query import DotaBuffQuery
 
 
@@ -21,7 +22,7 @@ class Test_DotaBuffQuery(unittest.TestCase):
         self.assertTrue(len(players) > 0)
         atomic = players[0]
         self.assertEqual(atomic.name, 'Atomic')
-        self.assertEqual(atomic.id, '93734428')
+        self.assertEqual(atomic.id, '116845505')
         self.assertTrue(len(atomic.img_url) > 0)
 
     def test_random_players_with_empty_name(self):
@@ -44,7 +45,6 @@ class Test_DotaBuffQuery(unittest.TestCase):
         players = self.query.get_players("Dendi")
         self.assertTrue(len(players) > 0)
         Dendi = players[0]
-        print(Dendi.last_match_date_str)
         self.assertTrue(len(Dendi.last_match_date) > 0)
 
     def test_matches_of_a_player(self):
@@ -58,3 +58,10 @@ class Test_DotaBuffQuery(unittest.TestCase):
         self.assertTrue(len(match.match_age) > 0 and match.match_age_str.endswith('ago'))
         self.assertTrue(len(match.duration) > 0)
         self.assertTrue(len(match.kda) > 0 and '/' in match.kda)
+
+    def test_vip_players(self):
+        for vip_player_name in VIP_PLAYERS_IDS:
+            players = self.query.get_players(vip_player_name)
+            self.assertTrue(len(players) > 0)
+            vip_player = players[0]
+            self.assertEqual(vip_player.name.lower(), vip_player_name.lower())

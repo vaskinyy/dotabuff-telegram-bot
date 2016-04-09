@@ -3,7 +3,7 @@ import random
 import requests
 from scrapy.selector import Selector
 
-from dotabuff.config import DEFAULT_NAMES, URL, PLAYERS_CUTOFF, MATCHES_CUTOFF
+from dotabuff.config import DEFAULT_NAMES, URL, PLAYERS_CUTOFF, MATCHES_CUTOFF, VIP_PLAYERS_IDS
 from dotabuff.models import DotaBuffPlayer, DotaBuffMatch
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,12 @@ class DotaBuffQuery(object):
 
     def get_players(self, name):
         # TODO cache players
+
+        vip_id = self.vip_player_id(name)
+        if vip_id:
+            logger.info('Found vip player {} {}'.format(name, vip_id))
+            name = vip_id
+
         players = []
 
         name = name or random.choice(DEFAULT_NAMES)
@@ -128,3 +134,10 @@ class DotaBuffQuery(object):
             matches.append(match)
 
         return matches
+
+    def vip_player_id(self, name):
+        name = name.lower()
+        for vip_name in VIP_PLAYERS_IDS:
+            if vip_name.lower() == name:
+                return VIP_PLAYERS_IDS[vip_name]
+        return None
