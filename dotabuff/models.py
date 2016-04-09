@@ -26,9 +26,28 @@ class DotaBuffPlayer(object):
     @property
     def telegram_article(self):
         return {'type': u'article',
-                'id': self.id, u'title': self.name,
-                'message_text': u'Dota player: {}'.format(self.name),
-                'thumb_url': self.img_url}
+                'id': self.id[:8],
+                'title': self._message_preview,
+                'message_text': self._message_text,
+                'thumb_url': self.img_url,
+                'description': self._message_description,
+                }
+
+    @property
+    def _message_preview(self):
+        return self.name
+
+    @property
+    def _message_text(self):
+        return self.last_match_date_str
+
+    @property
+    def _message_description(self):
+        res = self.last_match_date_str
+        res += '\n'
+        if self.matches:
+            res += self.matches[0].hero_name
+        return self.last_match_date_str
 
     @cached_property
     def last_match_date_str(self):

@@ -65,9 +65,15 @@ class DotaBuffQuery(object):
 
             last_match_date = player_div.css('.identity time').xpath('@datetime').extract_first(
                 default=None)
+            if not last_match_date:
+                last_match_date = u''
 
             player = DotaBuffPlayer(name=name, id=id, img_url=img_url,
                                     last_match_date=last_match_date)
+
+            # load matches
+            player.matches = self.get_matches(player.id)
+
             players.append(player)
 
         return players
