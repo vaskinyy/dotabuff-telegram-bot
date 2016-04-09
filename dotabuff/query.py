@@ -57,8 +57,7 @@ class DotaBuffQuery(object):
             if not img_url:
                 continue
 
-            # TODO add last match time
-            last_match_date = player_div.css('.identity time').xpath('text()').extract_first(
+            last_match_date = player_div.css('.identity time').xpath('@datetime').extract_first(
                 default=None)
 
             player = DotaBuffPlayer(name=name, id=id, img_url=img_url,
@@ -105,7 +104,7 @@ class DotaBuffQuery(object):
                 continue
 
             match_age = match_result_container.css('.r-body time').xpath(
-                'text()').extract_first(
+                '@datetime').extract_first(
                 default=None)
             if not match_age:
                 continue
