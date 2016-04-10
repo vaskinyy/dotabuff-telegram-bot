@@ -51,7 +51,7 @@ class DotaBuffPlayer(object):
 *{match_result}* {match_age} as {hero_name}
 KDA: _{kda}_. Duration: {duration}
 [Details]({match_url})
----'''.format(match_result=match.match_result, match_age=match.match_age_str,
+---'''.format(match_result=match.match_result.strip(), match_age=match.match_age_str,
               hero_name=match.hero_name, hero_icon=match.hero_img, kda=match.kda,
               duration=match.duration, match_url=match.match_url)
         foot = u'''
