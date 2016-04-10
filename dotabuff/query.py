@@ -44,7 +44,7 @@ class DotaBuffQuery(object):
 
         player_divs = Selector(text=resp.content).css('.result-player')
         for num, player_div in enumerate(player_divs):
-            if num > PLAYERS_CUTOFF:
+            if num >= PLAYERS_CUTOFF:
                 break
 
             name = player_div.xpath('@data-filter-value').extract_first(default=None)
@@ -66,7 +66,7 @@ class DotaBuffQuery(object):
             last_match_date = player_div.css('.identity time').xpath('@datetime').extract_first(
                 default=None)
             if not last_match_date:
-                last_match_date = u''
+                continue
 
             player = DotaBuffPlayer(name=name, id=id, img_url=img_url,
                                     last_match_date=last_match_date)
@@ -90,7 +90,7 @@ class DotaBuffQuery(object):
         match_divs = Selector(text=resp.content).css('.performances-overview .r-row')
 
         for num, match_div in enumerate(match_divs):
-            if num > MATCHES_CUTOFF:
+            if num >= MATCHES_CUTOFF:
                 break
 
             id = match_div.xpath('@data-link-to').extract_first(default=None)

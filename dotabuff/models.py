@@ -1,7 +1,8 @@
 import datetime
 import os
-import ago
 import time
+
+import ago
 from cached_property import cached_property
 
 os.environ['TZ'] = 'UTC'
@@ -25,13 +26,15 @@ class DotaBuffPlayer(object):
 
     @property
     def telegram_article(self):
-        return {'type': u'article',
-                'id': self.id[:8],
-                'title': self._message_preview,
-                'message_text': self._message_text,
-                'thumb_url': self.img_url,
-                'description': self._message_description,
-                }
+        article = {'type': u'article',
+                   'id': self.id[:8],
+                   'title': self._message_preview,
+                   'message_text': self._message_text,
+                   'thumb_url': self.img_url,
+                   'description': self._message_description,
+                   'parse_mode': 'Markdown',
+                   }
+        return article
 
     @property
     def _message_preview(self):
@@ -39,19 +42,38 @@ class DotaBuffPlayer(object):
 
     @property
     def _message_text(self):
-        return self.last_match_date_str
+        head = u'''
+        *{name}*'s last matches
+        '''.format(name=self.name, img_url=self.img_url)
+        matches = u''
+        for match in self.matches:
+            matches += u'''
+*{match_result}* {match_age} as {hero_name}
+KDA: _{kda}_. Duration: {duration}
+[Details]({match_url})
+---'''.format(match_result=match.match_result, match_age=match.match_age_str,
+              hero_name=match.hero_name, hero_icon=match.hero_img, kda=match.kda,
+              duration=match.duration, match_url=match.match_url)
+        foot = u'''
+[All matches]({player_url})'''.format(player_url=self.player_url)
+
+        return head + matches + foot
 
     @property
     def _message_description(self):
         res = self.last_match_date_str
         res += '\n'
         if self.matches:
-            res += self.matches[0].hero_name
-        return self.last_match_date_str
+            res += 'as ' + self.matches[0].hero_name
+        return res
 
     @cached_property
     def last_match_date_str(self):
         return str_date_to_age(self.last_match_date)
+
+    @cached_property
+    def player_url(self):
+        return u'http://www.dotabuff.com/players/{}'.format(self.id)
 
 
 class DotaBuffMatch(object):
@@ -70,11 +92,16 @@ class DotaBuffMatch(object):
 
     def __repr__(self):
         return u'{}. {} {}. Duration: {}. KDA: {}'.format(self.hero_name, self.match_result,
-                                                          self.match_age_str, self.duration, self.kda)
+                                                          self.match_age_str, self.duration,
+                                                          self.kda)
 
     @cached_property
     def match_age_str(self):
         return str_date_to_age(self.match_age)
+
+    @cached_property
+    def match_url(self):
+        return u'http://www.dotabuff.com/matches/{}'.format(self.match_id)
 
 
 def str_date_to_age(str_date):
