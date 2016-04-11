@@ -75,7 +75,9 @@ ENV LANG C.UTF-8
 
 ADD .      /var/projects/bot
 WORKDIR /var/projects/bot
-RUN pip install -r requirements.txt
+RUN conda env create -f conda.yml && \
+    source activate dotabuff-telegram-bot
+
 
 ##############################################################################
 # Run start.sh script when the container starts.
