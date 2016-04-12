@@ -75,8 +75,9 @@ ENV LANG C.UTF-8
 
 ADD .      /var/projects/bot
 WORKDIR /var/projects/bot
-RUN conda env create -f conda.yml && \
-    source activate dotabuff-telegram-bot
+RUN conda env create -f conda.yml
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+RUN source activate dotabuff-telegram-bot
 
 
 ##############################################################################
