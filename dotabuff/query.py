@@ -1,17 +1,19 @@
 import logging
 import random
 import requests
+import dota2api
 from scrapy.selector import Selector
 
-from dotabuff.config import DEFAULT_NAMES, URL, PLAYERS_CUTOFF, MATCHES_CUTOFF, VIP_PLAYERS_IDS
-from dotabuff.models import DotaBuffPlayer, DotaBuffMatch
+from dotabuff.config import DEFAULT_NAMES, DOTABUFF_URL, PLAYERS_CUTOFF, MATCHES_CUTOFF, VIP_PLAYERS_IDS, \
+    STEAM_API_KEY
+from dotabuff.models import DotaPlayer, DotaMatch
 
 logger = logging.getLogger(__name__)
 
 
-class DotaBuffQuery(object):
+class DotaQuery(object):
     """
-    Requests DotaBuff server for players, matches, etc.
+    Requests Dota API servers for players, matches, etc.
     """
 
     def _request(self, url):
@@ -34,7 +36,7 @@ class DotaBuffQuery(object):
         players = []
 
         name = name or random.choice(DEFAULT_NAMES)
-        player_search_url = URL + u'search?q={name}&commit=Search'.format(
+        player_search_url = DOTABUFF_URL + u'search?q={name}&commit=Search'.format(
             name=name.lower())
 
         resp = self._request(player_search_url)
@@ -68,8 +70,8 @@ class DotaBuffQuery(object):
             if not last_match_date:
                 continue
 
-            player = DotaBuffPlayer(name=name, id=id, img_url=img_url,
-                                    last_match_date=last_match_date)
+            player = DotaPlayer(name=name, id=id, img_url=img_url,
+                                last_match_date=last_match_date)
 
             # load matches
             player.matches = self.get_matches(player.id)
@@ -79,9 +81,14 @@ class DotaBuffQuery(object):
         return players
 
     def get_matches(self, player_id):
+        """
+        Query DotaBuff
+        :param player_id:
+        :return:
+        """
         matches = []
 
-        player_url = URL + u'/players/{id}'.format(id=player_id)
+        player_url = DOTABUFF_URL + u'/players/{id}'.format(id=player_id)
         resp = self._request(player_url)
         if not resp.ok:
             logger.error("Cannot get player {}".format(resp.status_code))
@@ -134,9 +141,9 @@ class DotaBuffQuery(object):
             if not kda:
                 continue
 
-            match = DotaBuffMatch(match_id=id, hero_name=hero_name, match_result=match_result,
-                                  match_age=match_age, duration=duration, kda=kda,
-                                  hero_img=hero_img)
+            match = DotaMatch(match_id=id, hero_name=hero_name, match_result=match_result,
+                              match_age=match_age, duration=duration, kda=kda,
+                              hero_img=hero_img)
             matches.append(match)
 
         return matches
@@ -147,3 +154,81 @@ class DotaBuffQuery(object):
             if vip_name.lower() == name:
                 return VIP_PLAYERS_IDS[vip_name]
         return None
+
+
+class DotaSteamQuery(DotaQuery):
+    """
+    Requests Dota Steam API servers for players, matches, etc.
+    """
+
+    def __init__(self):
+        super(DotaSteamQuery, self).__init__()
+        self.api = dota2api.Initialise(STEAM_API_KEY)
+
+    def get_matches(self, player_id):
+        """
+        Query Steam API
+        :param player_id:
+        :return:
+        """
+        matches = []
+
+        player_url = DOTABUFF_URL + u'/players/{id}'.format(id=player_id)
+        resp = self._request(player_url)
+        if not resp.ok:
+            logger.error("Cannot get player {}".format(resp.status_code))
+            return matches
+
+        match_divs = Selector(text=resp.content).css('.performances-overview .r-row')
+
+        for num, match_div in enumerate(match_divs):
+            if num >= MATCHES_CUTOFF:
+                break
+
+            id = match_div.xpath('@data-link-to').extract_first(default=None)
+            if not id:
+                continue
+            id = id[len('/matches/'):]
+
+            icon_text_container = match_div.css('.r-icon-text')
+            hero_img = icon_text_container.css('.r-body img').xpath('@src').extract_first(
+                default=None)
+            if hero_img and hero_img.startswith('/'):
+                hero_img = 'http://dotabuff.com' + hero_img
+
+            hero_name = icon_text_container.css('.r-body > a').xpath('text()').extract_first(
+                default=None)
+            if not hero_name:
+                continue
+
+            match_result_container = match_div.css('.r-match-result')
+            match_result = match_result_container.css('.r-body > a').xpath('text()').extract_first(
+                default=None)
+            if not match_result:
+                continue
+
+            match_age = match_result_container.css('.r-body time').xpath(
+                '@datetime').extract_first(
+                default=None)
+            if not match_age:
+                continue
+
+            duration = match_div.css('.r-duration .r-body').xpath(
+                'text()').extract_first(
+                default=None)
+            if not duration:
+                continue
+
+            kda_span = match_div.css('.r-line-graph .r-body .kda-record')
+
+            kda = '/'.join(kda_span.css('.value').xpath('text()').extract())
+
+            if not kda:
+                continue
+
+            match = DotaMatch(match_id=id, hero_name=hero_name, match_result=match_result,
+                              match_age=match_age, duration=duration, kda=kda,
+                              hero_img=hero_img)
+            matches.append(match)
+
+        return matches

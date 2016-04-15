@@ -1,12 +1,12 @@
 import unittest
 
 from dotabuff.config import VIP_PLAYERS_IDS
-from dotabuff.query import DotaBuffQuery
+from dotabuff.query import DotaQuery
 
 
 class Test_DotaBuffQuery(unittest.TestCase):
     def setUp(self):
-        self.query = DotaBuffQuery()
+        self.query = DotaQuery()
 
     def test_players_by_name_happymeds(self):
         players = self.query.get_players("HappyMeds")

@@ -1,6 +1,6 @@
 import telepot
 
-from dotabuff.query import DotaBuffQuery
+from dotabuff.query import DotaQuery
 
 
 class InlineHandler(telepot.helper.UserHandler):
@@ -8,7 +8,7 @@ class InlineHandler(telepot.helper.UserHandler):
         super(InlineHandler, self).__init__(seed_tuple, timeout,
                                             flavors=['inline_query', 'chosen_inline_result'])
         self._answerer = telepot.helper.Answerer(self.bot)
-        self.query = DotaBuffQuery()
+        self.query = DotaQuery()
 
     def on_inline_query(self, msg):
         query_id, from_id, query_string = telepot.glance(msg, flavor='inline_query')

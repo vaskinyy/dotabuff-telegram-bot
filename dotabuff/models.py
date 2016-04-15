@@ -9,7 +9,7 @@ os.environ['TZ'] = 'UTC'
 time.tzset()
 
 
-class DotaBuffPlayer(object):
+class DotaPlayer(object):
     """
     Holds player's data
     """
@@ -76,7 +76,7 @@ KDA: _{kda}_. Duration: {duration}
         return u'http://www.dotabuff.com/players/{}'.format(self.id)
 
 
-class DotaBuffMatch(object):
+class DotaMatch(object):
     """
     Holds match data
     """
