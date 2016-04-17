@@ -2,11 +2,14 @@ import logging
 import random
 import requests
 import dota2api
+from dota2api.src.exceptions import APIError
 from scrapy.selector import Selector
 
 from dotabuff.config import DEFAULT_NAMES, DOTABUFF_URL, PLAYERS_CUTOFF, MATCHES_CUTOFF, VIP_PLAYERS_IDS, \
-    STEAM_API_KEY
+    STEAM_API_KEY, HEROES_DATA
 from dotabuff.models import DotaPlayer, DotaMatch
+from datetime import datetime, timedelta
+from dotabuff.utils import get_heroes_data
 
 logger = logging.getLogger(__name__)
 
@@ -171,64 +174,80 @@ class DotaSteamQuery(DotaQuery):
         :param player_id:
         :return:
         """
-        matches = []
 
-        player_url = DOTABUFF_URL + u'/players/{id}'.format(id=player_id)
-        resp = self._request(player_url)
-        if not resp.ok:
-            logger.error("Cannot get player {}".format(resp.status_code))
+        matches = []
+        if not player_id:
+            return matches
+        player_id = int(player_id)
+
+        try:
+            hist = self.api.get_match_history(player_id, matches_requested=MATCHES_CUTOFF)
+        except APIError as er:
             return matches
 
-        match_divs = Selector(text=resp.content).css('.performances-overview .r-row')
+        if 'matches' in hist:
+            for num, match in enumerate(hist['matches']):
+                if num >= MATCHES_CUTOFF:
+                    break
 
-        for num, match_div in enumerate(match_divs):
-            if num >= MATCHES_CUTOFF:
-                break
+                id = str(match.get('match_id', None))
+                if not id:
+                    continue
 
-            id = match_div.xpath('@data-link-to').extract_first(default=None)
-            if not id:
-                continue
-            id = id[len('/matches/'):]
+                match_datails = self.api.get_match_details(match_id=id)
 
-            icon_text_container = match_div.css('.r-icon-text')
-            hero_img = icon_text_container.css('.r-body img').xpath('@src').extract_first(
-                default=None)
-            if hero_img and hero_img.startswith('/'):
-                hero_img = 'http://dotabuff.com' + hero_img
+                hero_id = None
+                kda = None
+                match_result = None
+                for player in match_datails.get('players', []):
+                    player_account_id = player.get('account_id', None)
+                    if player_account_id and player_account_id == int(player_id):
+                        hero_id = player.get('hero_id', None)
+                        player_slot = player.get('player_slot', None)
+                        # https://wiki.teamfortress.com/wiki/WebAPI/GetMatchDetails#Player_Slot
+                        is_radiant = bool(player_slot & (1 << 7))
+                        radiant_wins = match_datails.get('radiant_win', None)
+                        if is_radiant and radiant_wins:
+                            match_result = "Won Match"
+                        else:
+                            match_result = "Lost Match"
+                        kills = player.get('kills', None)
+                        deaths = player.get('deaths', None)
+                        assists = player.get('assists', None)
+                        if kills and deaths and assists:
+                            kda = '{}/{}/{}'.format(kills, deaths, assists)
+                        break
 
-            hero_name = icon_text_container.css('.r-body > a').xpath('text()').extract_first(
-                default=None)
-            if not hero_name:
-                continue
+                if not hero_id:
+                    continue
 
-            match_result_container = match_div.css('.r-match-result')
-            match_result = match_result_container.css('.r-body > a').xpath('text()').extract_first(
-                default=None)
-            if not match_result:
-                continue
+                if hero_id not in HEROES_DATA:
+                    continue
 
-            match_age = match_result_container.css('.r-body time').xpath(
-                '@datetime').extract_first(
-                default=None)
-            if not match_age:
-                continue
+                hero_name = HEROES_DATA[hero_id][0]
+                hero_img = HEROES_DATA[hero_id][1]
 
-            duration = match_div.css('.r-duration .r-body').xpath(
-                'text()').extract_first(
-                default=None)
-            if not duration:
-                continue
+                start_time = match_datails.get('start_time', None)
+                if not start_time:
+                    continue
+                match_age = '{:%Y-%m-%dT%H:%M:%S+00:00}'.format(datetime.fromtimestamp(start_time))
 
-            kda_span = match_div.css('.r-line-graph .r-body .kda-record')
+                if not match_age:
+                    continue
 
-            kda = '/'.join(kda_span.css('.value').xpath('text()').extract())
+                duration_seconds = match_datails.get('duration', None)
+                if not duration_seconds:
+                    continue
+                delta = timedelta(seconds=duration_seconds)
+                duration_date = datetime(1990, 1, 1) + delta
+                if duration_date.hour:
+                    duration = "{:%H:%M:%S}".format(duration_date)
+                else:
+                    duration = "{:%M:%S}".format(duration_date)
 
-            if not kda:
-                continue
-
-            match = DotaMatch(match_id=id, hero_name=hero_name, match_result=match_result,
-                              match_age=match_age, duration=duration, kda=kda,
-                              hero_img=hero_img)
-            matches.append(match)
+                match = DotaMatch(match_id=id, hero_name=hero_name, match_result=match_result,
+                                  match_age=match_age, duration=duration, kda=kda,
+                                  hero_img=hero_img)
+                matches.append(match)
 
         return matches

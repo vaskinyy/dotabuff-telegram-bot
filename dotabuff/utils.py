@@ -2,6 +2,10 @@ import logging
 import time
 from collections import defaultdict
 
+import dota2api
+
+from dotabuff.config import STEAM_API_KEY
+
 logger = logging.getLogger(__name__)
 logging.basicConfig()
 logger.setLevel(logging.INFO)
@@ -37,3 +41,17 @@ class SpeedMeasure(object):
 
         self.update_counter += 1
         self.report()
+
+
+def get_heroes_data():
+    res = {}
+    api = dota2api.Initialise(STEAM_API_KEY)
+    heroes = api.get_heroes()
+    for hero in heroes.get('heroes', []):
+        print hero
+        hero_id = hero.get('id', None)
+        img_url = hero.get('url_small_portrait', None)
+        localized_name = hero.get('localized_name', None)
+        if hero_id and img_url and localized_name:
+            res[hero_id] = localized_name, img_url
+    return res
