@@ -25,3 +25,9 @@ To check if the package properly installed you may run tests
  # (optional) run tests
  python -m unittest discover
 
+Deploy
+------
+Deploy instructions
+::
+ # deploy to aws
+ eb deploy
