@@ -88,12 +88,11 @@ class DotaBuffQuery(object):
             return matches
 
         match_divs = Selector(text=resp.content).css('.performances-overview .r-row')
-
         for num, match_div in enumerate(match_divs):
             if num >= MATCHES_CUTOFF:
                 break
+            id = match_div.xpath('//a[contains(@href, "/matches/")]/@href').extract_first(default=None)
 
-            id = match_div.xpath('@data-link-to').extract_first(default=None)
             if not id:
                 continue
             id = id[len('/matches/'):]
