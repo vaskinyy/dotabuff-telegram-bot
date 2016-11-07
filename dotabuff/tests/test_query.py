@@ -59,18 +59,6 @@ class Test_DotaBuffQuery(unittest.TestCase):
         self.assertTrue(len(match.duration) > 0)
         self.assertTrue(len(match.kda) > 0 and '/' in match.kda)
 
-    def test_matches_of_a_player_happy_meds(self):
-        matches = self.query.get_matches("HappyMeds")
-        self.assertTrue(len(matches) > 0)
-        match = matches[0]
-
-        self.assertTrue(len(match.match_id) > 0)
-        self.assertTrue(len(match.hero_name) > 0)
-        self.assertTrue(len(match.match_result) > 0)
-        self.assertTrue(len(match.match_age) > 0 and match.match_age_str.endswith('ago'))
-        self.assertTrue(len(match.duration) > 0)
-        self.assertTrue(len(match.kda) > 0 and '/' in match.kda)
-
     def test_vip_players(self):
         for vip_player_name in VIP_PLAYERS_IDS:
             players = self.query.get_players(vip_player_name)
